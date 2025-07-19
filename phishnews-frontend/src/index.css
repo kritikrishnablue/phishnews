@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -6,7 +7,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #1a1a1a;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,13 +15,25 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Light mode styles */
+:root:not(.dark) {
+  color: #213547;
+  background-color: #ffffff;
+}
+
+/* Dark mode styles */
+:root.dark {
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #1a1a1a;
+}
+
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #06b6d4;
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: #0891b2;
 }
 
 body {
@@ -29,6 +42,14 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #ffffff;
+  color: #213547;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body.dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
 }
 
 h1 {
@@ -43,27 +64,93 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #374151;
+  color: #ffffff;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.2s ease, color 0.2s ease;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: #06b6d4;
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Light mode button styles */
+:root:not(.dark) button {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* Utility classes for line clamping */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Custom scrollbar for both themes */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Light mode scrollbar */
+:root:not(.dark) ::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Theme transition classes */
+.theme-transition {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Additional utility classes for theme switching */
+.bg-theme-primary {
+  @apply bg-gray-900 dark:bg-gray-900 bg-white;
+}
+
+.bg-theme-secondary {
+  @apply bg-gray-800 dark:bg-gray-800 bg-gray-100;
+}
+
+.text-theme-primary {
+  @apply text-white dark:text-white text-gray-900;
+}
+
+.text-theme-secondary {
+  @apply text-gray-300 dark:text-gray-300 text-gray-700;
+}
+
+.border-theme {
+  @apply border-gray-700 dark:border-gray-700 border-gray-200;
 }

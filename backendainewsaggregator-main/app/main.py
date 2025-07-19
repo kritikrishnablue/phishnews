@@ -1,12 +1,14 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles  # 👈 Add this import
 import os  # 👈 Add this to check/create directory if needed
 from fastapi.security import HTTPBearer
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
+from fastapi.responses import Response
 
 from app.api.auth import auth_router
 from app.api.news import news_router
@@ -67,6 +69,29 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(rss_router, prefix="/rss")
 app.include_router(loc_router)
 app.include_router(user_router, prefix="/user")
+
+@app.get("/proxy/image")
+async def proxy_image(url: str):
+    """Proxy endpoint to handle CORS issues for images"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            
+            # Return the image with proper headers
+            return Response(
+                content=response.content,
+                media_type=response.headers.get("content-type", "image/jpeg"),
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET",
+                    "Access-Control-Allow-Headers": "*",
+                    "Cache-Control": "public, max-age=3600"
+                }
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to proxy image: {str(e)}")
+
 @app.get("/")
 def read_root():
     return {"message": "✅ AI News Aggregator Backend is Running"}

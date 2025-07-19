@@ -16,7 +16,6 @@ FEEDS = [
     ("https://feeds.skynews.com/feeds/rss/world.xml", "Sky News"),
     ("https://www.dw.com/en/top-stories/s-9097/rss", "Deutsche Welle"),
     ("https://timesofindia.indiatimes.com/rssfeeds/296589292.cms", "Times of India"),
-
     # 🇦🇺 Australian feeds
     ("https://www.abc.net.au/news/feed/51120/rss.xml", "ABC News Australia"),
     ("https://www.theguardian.com/au/rss", "The Guardian Australia"),
@@ -25,7 +24,70 @@ FEEDS = [
     ("https://www.theage.com.au/rss/world.xml", "The Age"),
     ("https://www.theaustralian.com.au/rss/world.xml", "The Australian"),
     ("https://www.theconversation.com/au/rss/world", "The Conversation"),
+    # 🌏 More global and Indian feeds
+    # ("https://www.hindustantimes.com/rss/topnews/rssfeed.xml", "Hindustan Times"),
+    # ("https://www.thehindu.com/news/national/feeder/default.rss", "The Hindu"),
+    # ("https://www.france24.com/en/rss", "France 24"),
+    # ("https://www.japantimes.co.jp/feed/", "Japan Times"),
+    # ("https://www.scmp.com/rss/91/feed", "South China Morning Post"),
+    # ("https://www.lemonde.fr/rss/une.xml", "Le Monde"),
+    # ("https://www.elmundo.es/rss/portada.xml", "El Mundo"),
+    # ("https://www.cbc.ca/cmlink/rss-world", "CBC World"),
+    # ("https://www.latimes.com/world/rss2.0.xml", "LA Times World"),
+    # ("https://www.washingtonpost.com/rss/world", "Washington Post World"),
+    # ("https://www.indiatoday.in/rss/home", "India Today"),
+    # ("https://indianexpress.com/section/india/feed/", "Indian Express"),
+    # ("https://www.financialexpress.com/feed/", "Financial Express"),
+    # ("https://www.business-standard.com/rss/latest.rss", "Business Standard"),
+    # ("https://www.livemint.com/rss/news", "LiveMint"),
+    # ("https://www.telegraphindia.com/rssfeed/section/nation.xml", "Telegraph India"),
+    # ("https://www.deccanherald.com/rss-feeds/top-news", "Deccan Herald"),
+    # ("https://www.outlookindia.com/rss/national-news", "Outlook India"),
+    # ("https://www.news18.com/rss/india.xml", "News18 India"),
+    # ("https://zeenews.india.com/rss/india-news.xml", "Zee News India"),
+    # ("https://www.dnaindia.com/rss/india.xml", "DNA India"),
+    # ("https://www.tribuneindia.com/rss/feed.aspx?cat_id=1", "Tribune India"),
+    # ("https://www.indiatvnews.com/rssfeedsection/national-331.xml", "India TV News"),
 ]
+
+def extract_image_from_entry(entry):
+    """Extract image URL from RSS entry"""
+    # Check multiple possible image fields
+    image_fields = [
+        'media_content',
+        'media_thumbnail',
+        'enclosures',
+        'links',
+        'media_group',
+        'image',
+        'thumbnail'
+    ]
+    
+    for field in image_fields:
+        if hasattr(entry, field):
+            value = getattr(entry, field)
+            if value:
+                # Handle different field types
+                if field == 'enclosures' and isinstance(value, list):
+                    for enclosure in value:
+                        if hasattr(enclosure, 'type') and 'image' in enclosure.type:
+                            return enclosure.href
+                elif field == 'media_content' and isinstance(value, list):
+                    for media in value:
+                        if hasattr(media, 'type') and 'image' in media.type:
+                            return media.url
+                elif field == 'links' and isinstance(value, list):
+                    for link in value:
+                        if hasattr(link, 'type') and 'image' in link.type:
+                            return link.href
+                elif isinstance(value, str) and (value.startswith('http') or value.startswith('//')):
+                    return value
+                elif hasattr(value, 'url'):
+                    return value.url
+                elif hasattr(value, 'href'):
+                    return value.href
+    
+    return None
 
 def fetch_rss_articles(user_country: str | None = None):
     total_saved = 0
@@ -80,6 +142,13 @@ def fetch_rss_articles(user_country: str | None = None):
                 "source": "RSS",
                 "saved_at": datetime.utcnow(),
             }
+
+            # Add image URL if found
+            image_url = extract_image_from_entry(entry)
+            if image_url:
+                print(f"🖼️ Found image: {image_url[:50]}...")
+                article["urlToImage"] = image_url
+                article["image"] = image_url
 
             if user_country:
                 article["userCountry"] = user_country.upper()

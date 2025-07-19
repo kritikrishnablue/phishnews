@@ -7,6 +7,7 @@ from app.services.news_service import get_trending_articles, search_articles
 from app.dependencies.geo_dep import geo_dep
 from app.api.auth import get_current_user
 from app.database.mongo import news_collection
+from bson import ObjectId
 
 news_router = APIRouter()
 
@@ -93,6 +94,10 @@ async def save_news_to_db(
 @news_router.get("/trending")
 def get_trending():
     articles = get_trending_articles()
+    # Convert ObjectId to string for each article
+    for a in articles:
+        if '_id' in a and isinstance(a['_id'], ObjectId):
+            a['_id'] = str(a['_id'])
     return {"trending": articles}
 
 
@@ -165,3 +170,12 @@ async def get_personalized_news(
         "source": source,
         "articles": articles
     }
+
+
+@news_router.get("/channels")
+def get_channels():
+    # Get all unique channel names from the news_collection
+    channels = news_collection.distinct("channel")
+    # Remove None or empty values and sort
+    channels = sorted([c for c in channels if c])
+    return {"channels": channels}

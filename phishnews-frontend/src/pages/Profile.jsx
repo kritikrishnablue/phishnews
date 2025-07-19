@@ -89,7 +89,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="p-4 max-w-4xl mx-auto">
-        <div className="text-center">Loading profile...</div>
+        <div className="text-center text-gray-400">Loading profile...</div>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function Profile() {
   if (error) {
     return (
       <div className="p-4 max-w-4xl mx-auto">
-        <div className="text-red-500 text-center">Error: {error}</div>
+        <div className="text-red-400 text-center">Error: {error}</div>
       </div>
     );
   }
@@ -105,14 +105,14 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="p-4 max-w-4xl mx-auto">
-        <div className="text-center">Please login to view your profile.</div>
+        <div className="text-center text-gray-400">Please login to view your profile.</div>
       </div>
     );
   }
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg">
+      <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700">
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-t-lg">
           <div className="flex items-center gap-4">
@@ -127,7 +127,7 @@ export default function Profile() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="border-b">
+        <div className="border-b border-gray-700">
           <nav className="flex">
             {[
               { id: 'profile', label: 'Profile', icon: FaUser },
@@ -141,8 +141,8 @@ export default function Profile() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-6 py-3 flex items-center gap-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-b-2 border-cyan-500 text-cyan-600 font-semibold'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'border-b-2 border-cyan-500 text-cyan-400 font-semibold'
+                    : 'text-gray-400 hover:text-gray-300'
                 }`}
               >
                 <tab.icon className="text-sm" />
@@ -158,16 +158,16 @@ export default function Profile() {
           {activeTab === 'profile' && (
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Account Information</h3>
-                  <p><strong>Email:</strong> {user.email}</p>
-                  <p><strong>Member since:</strong> {new Date().toLocaleDateString()}</p>
+                <div className="bg-gray-700 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-2 text-white">Account Information</h3>
+                  <p className="text-gray-300"><strong>Email:</strong> {user.email}</p>
+                  <p className="text-gray-300"><strong>Member since:</strong> {new Date().toLocaleDateString()}</p>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Statistics</h3>
-                  <p><strong>Bookmarks:</strong> {user.bookmarks?.length || 0}</p>
-                  <p><strong>Liked articles:</strong> {user.liked_articles?.length || 0}</p>
-                  <p><strong>Reading history:</strong> {user.reading_history?.length || 0}</p>
+                <div className="bg-gray-700 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-2 text-white">Statistics</h3>
+                  <p className="text-gray-300"><strong>Bookmarks:</strong> {user.bookmarks?.length || 0}</p>
+                  <p className="text-gray-300"><strong>Liked articles:</strong> {user.liked_articles?.length || 0}</p>
+                  <p className="text-gray-300"><strong>Reading history:</strong> {user.reading_history?.length || 0}</p>
                 </div>
               </div>
               <button
@@ -183,7 +183,7 @@ export default function Profile() {
           {activeTab === 'preferences' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">News Preferences</h3>
+                <h3 className="text-lg font-semibold text-white">News Preferences</h3>
                 <button
                   onClick={savePreferences}
                   className="px-4 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 flex items-center gap-2"
@@ -195,18 +195,18 @@ export default function Profile() {
 
               {/* Countries */}
               <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
                   <FaGlobe />
                   Preferred Countries
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {countries.map(country => (
-                    <label key={country.code} className="flex items-center gap-2">
+                    <label key={country.code} className="flex items-center gap-2 text-gray-300">
                       <input
                         type="checkbox"
                         checked={preferences.countries.includes(country.code)}
                         onChange={(e) => handlePreferenceChange('countries', country.code, e.target.checked)}
-                        className="rounded"
+                        className="rounded bg-gray-700 border-gray-600"
                       />
                       {country.name}
                     </label>
@@ -216,18 +216,18 @@ export default function Profile() {
 
               {/* Topics */}
               <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-white">
                   <FaNewspaper />
                   Preferred Topics
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {topics.map(topic => (
-                    <label key={topic} className="flex items-center gap-2">
+                    <label key={topic} className="flex items-center gap-2 text-gray-300">
                       <input
                         type="checkbox"
                         checked={preferences.topics.includes(topic)}
                         onChange={(e) => handlePreferenceChange('topics', topic, e.target.checked)}
-                        className="rounded"
+                        className="rounded bg-gray-700 border-gray-600"
                       />
                       {topic.charAt(0).toUpperCase() + topic.slice(1)}
                     </label>
@@ -237,15 +237,15 @@ export default function Profile() {
 
               {/* Sources */}
               <div>
-                <h4 className="font-semibold mb-3">Preferred Sources</h4>
+                <h4 className="font-semibold mb-3 text-white">Preferred Sources</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {sources.map(source => (
-                    <label key={source} className="flex items-center gap-2">
+                    <label key={source} className="flex items-center gap-2 text-gray-300">
                       <input
                         type="checkbox"
                         checked={preferences.sources.includes(source)}
                         onChange={(e) => handlePreferenceChange('sources', source, e.target.checked)}
-                        className="rounded"
+                        className="rounded bg-gray-700 border-gray-600"
                       />
                       {source}
                     </label>
@@ -258,16 +258,16 @@ export default function Profile() {
           {/* Reading History Tab */}
           {activeTab === 'history' && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Recently Viewed Articles</h3>
+              <h3 className="text-lg font-semibold mb-4 text-white">Recently Viewed Articles</h3>
               {recentlyViewed.length > 0 ? (
                 <div className="space-y-2">
                   {recentlyViewed.map((articleId, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded">
+                    <div key={index} className="p-3 bg-gray-700 rounded">
                       <a 
                         href={articleId} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className="text-cyan-400 hover:text-cyan-300"
                       >
                         {articleId}
                       </a>
@@ -275,7 +275,7 @@ export default function Profile() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No reading history yet.</p>
+                <p className="text-gray-400">No reading history yet.</p>
               )}
             </div>
           )}
@@ -283,16 +283,16 @@ export default function Profile() {
           {/* Bookmarks Tab */}
           {activeTab === 'bookmarks' && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Bookmarked Articles</h3>
+              <h3 className="text-lg font-semibold mb-4 text-white">Bookmarked Articles</h3>
               {user.bookmarks?.length > 0 ? (
                 <div className="space-y-2">
                   {user.bookmarks.map((bookmark, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded">
+                    <div key={index} className="p-3 bg-gray-700 rounded">
                       <a 
                         href={bookmark} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className="text-cyan-400 hover:text-cyan-300"
                       >
                         {bookmark}
                       </a>
@@ -300,7 +300,7 @@ export default function Profile() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No bookmarks yet.</p>
+                <p className="text-gray-400">No bookmarks yet.</p>
               )}
             </div>
           )}
@@ -308,16 +308,16 @@ export default function Profile() {
           {/* Liked Articles Tab */}
           {activeTab === 'liked' && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Liked Articles</h3>
+              <h3 className="text-lg font-semibold mb-4 text-white">Liked Articles</h3>
               {user.liked_articles?.length > 0 ? (
                 <div className="space-y-2">
                   {user.liked_articles.map((articleId, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded">
+                    <div key={index} className="p-3 bg-gray-700 rounded">
                       <a 
                         href={articleId} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className="text-cyan-400 hover:text-cyan-300"
                       >
                         {articleId}
                       </a>
@@ -325,7 +325,7 @@ export default function Profile() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No liked articles yet.</p>
+                <p className="text-gray-400">No liked articles yet.</p>
               )}
             </div>
           )}

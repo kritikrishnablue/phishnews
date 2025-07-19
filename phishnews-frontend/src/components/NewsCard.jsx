@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { FaRegThumbsUp, FaRegThumbsDown, FaRegBookmark, FaBookmark, FaRegShareSquare, FaEye, FaEyeSlash } from 'react-icons/fa';
-import { userAPI } from '../services/api';
+import { useState, useEffect } from 'react';
+import { FaBookmark, FaShare, FaThumbsUp, FaThumbsDown, FaEye, FaExternalLinkAlt, FaPlay } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { userAPI } from '../services/api';
+import { debugArticleImages, getEnhancedImageUrl, isLikelyCorsBlocked, getCorsProxyUrl, testImageWithFallback } from '../utils/imageUtils';
+import ArticleSummary from './ArticleSummary';
 
 export default function NewsCard({ article, onLike, onBookmark, onShare, showStatus = true }) {
   const [isLiked, setIsLiked] = useState(false);
@@ -9,9 +11,98 @@ export default function NewsCard({ article, onLike, onBookmark, onShare, showSta
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isRead, setIsRead] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [enhancedImageUrl, setEnhancedImageUrl] = useState(null);
   const { isAuthenticated } = useAuth();
 
   const articleId = article.url || article.id;
+
+  // Check if article has video content
+  const hasVideo = article.urlToImage?.includes('video') || 
+                   article.title?.toLowerCase().includes('video') ||
+                   article.description?.toLowerCase().includes('video') ||
+                   article.url?.includes('youtube') ||
+                   article.url?.includes('vimeo');
+
+  // Generate category based on article content
+  const getCategory = () => {
+    if (article.category) return article.category;
+    if (article.title?.toLowerCase().includes('cybersecurity') || article.title?.toLowerCase().includes('security')) return 'cybersecurity';
+    if (article.title?.toLowerCase().includes('technology') || article.title?.toLowerCase().includes('tech')) return 'technology';
+    if (article.title?.toLowerCase().includes('business')) return 'business';
+    if (article.title?.toLowerCase().includes('politics')) return 'politics';
+    if (article.title?.toLowerCase().includes('science')) return 'science';
+    if (article.title?.toLowerCase().includes('health')) return 'health';
+    return 'general';
+  };
+
+  // Enhanced getImageUrl function - MOVED TO TOP
+  const getImageUrl = () => {
+    // First try enhanced image URL
+    if (enhancedImageUrl) {
+      return enhancedImageUrl;
+    }
+    
+    // Fallback to original logic
+    if (article.urlToImage && article.urlToImage !== 'null' && article.urlToImage !== '') {
+      return article.urlToImage;
+    }
+    if (article.image && article.image !== 'null' && article.image !== '') {
+      return article.image;
+    }
+    if (article.urlToImage && typeof article.urlToImage === 'string' && article.urlToImage.length > 0) {
+      return article.urlToImage;
+    }
+    
+    // Final fallback to unique placeholder
+    const category = getCategory();
+    const articleId = article.url || article.id || article._id;
+    return `https://picsum.photos/400/250?random=${articleId || Date.now() + Math.random()}`;
+  };
+
+  // Enable debugging
+  useEffect(() => {
+    debugArticleImages(article);
+  }, [article]);
+
+  // Get enhanced image URL
+  useEffect(() => {
+    const loadEnhancedImage = async () => {
+      const url = await getEnhancedImageUrl(article);
+      setEnhancedImageUrl(url);
+    };
+    loadEnhancedImage();
+  }, [article]);
+
+  // Handle image load
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  // Handle image error with better fallback
+  const handleImageError = (e) => {
+    console.log('Image failed to load:', e.target.src);
+    setImageError(true);
+    setImageLoading(false);
+    
+    // If this is a CORS-blocked image, try the proxy version
+    if (isLikelyCorsBlocked(e.target.src) && !e.target.src.includes('cors-anywhere')) {
+      const proxyUrl = getCorsProxyUrl(e.target.src);
+      console.log('Trying CORS proxy:', proxyUrl);
+      e.target.src = proxyUrl;
+      return;
+    }
+    
+    // Try to load a unique fallback image
+    const articleId = article.url || article.id || article._id;
+    const fallbackUrl = `https://picsum.photos/400/250?random=${articleId || Date.now() + Math.random()}`;
+    if (e.target.src !== fallbackUrl) {
+      e.target.src = fallbackUrl;
+    }
+  };
 
   // Handle like
   const handleLike = async () => {
@@ -107,7 +198,7 @@ export default function NewsCard({ article, onLike, onBookmark, onShare, showSta
     }
   };
 
-  // Handle article click (mark as read)
+  // Handle article click (mark as read and show summary)
   const handleArticleClick = async () => {
     if (isAuthenticated && !isRead) {
       try {
@@ -118,139 +209,159 @@ export default function NewsCard({ article, onLike, onBookmark, onShare, showSta
       }
     }
     
-    // Open article in new tab
+    setShowSummary(true);
+  };
+
+  // Handle read original article
+  const handleReadOriginal = () => {
     window.open(article.url, '_blank');
   };
 
+  const category = getCategory();
+  const imageUrl = getImageUrl();
+
+  // Debug logging - only in development
+  if (process.env.NODE_ENV === 'development') {
+    if (imageUrl) {
+      console.log('✅ Found image URL:', imageUrl, 'for article:', article.title);
+      
+      // Check if it's likely to be CORS blocked
+      if (isLikelyCorsBlocked(imageUrl)) {
+        console.log('⚠️ Image likely to be CORS blocked:', imageUrl);
+      }
+    } else {
+      console.log('❌ No image URL found for article:', article.title);
+      // Uncomment the next line to see detailed debugging
+      // debugArticleImages(article);
+    }
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6 hover:shadow-lg transition-shadow">
-      <div className="flex flex-col md:flex-row gap-4">
-        {/* Article Image */}
-        {article.urlToImage && (
-          <div className="md:w-48 md:h-32 flex-shrink-0">
-            <img
-              src={article.urlToImage}
-              alt={article.title}
-              className="w-full h-32 md:h-full object-cover rounded-lg"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-          </div>
-        )}
-
-        {/* Article Content */}
-        <div className="flex-1 flex flex-col justify-between">
-          <div>
-            {/* Status badges */}
-            {showStatus && (
-              <div className="flex gap-2 mb-2">
-                {article.status && (
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                    {article.status}
-                  </span>
-                )}
-                {isRead && (
-                  <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded flex items-center gap-1">
-                    <FaEye className="text-xs" />
-                    Read
-                  </span>
-                )}
-                {article.like_count > 0 && (
-                  <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
-                    {article.like_count} likes
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Title */}
-            <h2 
-              className="text-xl font-bold mb-2 text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-              onClick={handleArticleClick}
-            >
-              {article.title}
-            </h2>
-
-            {/* Description */}
-            <p className="text-gray-700 mb-3 line-clamp-3">
-              {article.description || article.summary || 'No description available'}
-            </p>
-
-            {/* Meta information */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
-              {article.source?.name && (
-                <span>Source: {article.source.name}</span>
+    <>
+      <div className="bg-gray-800 dark:bg-gray-800 bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow border border-gray-200 dark:border-gray-700">
+        {/* Article Image/Video */}
+        <div className="relative">
+          {imageUrl && !imageError ? (
+            <div className="relative">
+              <img
+                src={imageUrl}
+                alt={article.title}
+                className="w-full h-48 object-cover"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                loading="lazy"
+                crossOrigin="anonymous"
+              />
+              {imageLoading && (
+                <div className="absolute inset-0 bg-gray-700 dark:bg-gray-700 bg-gray-300 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+                </div>
               )}
-              {article.publishedAt && (
-                <span>Published: {new Date(article.publishedAt).toLocaleDateString()}</span>
-              )}
-              {article.author && (
-                <span>Author: {article.author}</span>
+              {/* Video Play Button Overlay */}
+              {hasVideo && !imageLoading && (
+                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                    <FaPlay className="text-white text-lg ml-1" />
+                  </div>
+                </div>
               )}
             </div>
+          ) : (
+            <div className="w-full h-48 bg-gray-700 dark:bg-gray-700 bg-gray-200 flex items-center justify-center">
+              <div className="text-center">
+                <FaEye className="text-gray-500 dark:text-gray-500 text-gray-400 text-4xl mx-auto mb-2" />
+                <p className="text-gray-500 dark:text-gray-500 text-gray-400 text-sm">{category}</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Category Tag */}
+          <div className="absolute top-3 left-3">
+            <span className="px-2 py-1 text-xs font-medium bg-gray-700 dark:bg-gray-700 bg-gray-200 text-white dark:text-white text-gray-800 rounded">
+              {category}
+            </span>
+          </div>
+          
+          {/* Video Badge */}
+          {hasVideo && (
+            <div className="absolute top-3 right-12">
+              <span className="px-2 py-1 text-xs font-medium bg-red-500 text-white rounded flex items-center gap-1">
+                <FaPlay className="text-xs" />
+                Video
+              </span>
+            </div>
+          )}
+          
+          {/* Bookmark Button */}
+          <button
+            onClick={handleBookmark}
+            className="absolute top-3 right-3 p-2 bg-gray-800 dark:bg-gray-800 bg-white bg-opacity-75 rounded-full hover:bg-opacity-100 transition-all"
+          >
+            {isBookmarked ? (
+              <FaBookmark className="text-cyan-400 text-sm" />
+            ) : (
+              <FaBookmark className="text-white dark:text-white text-gray-800 text-sm" />
+            )}
+          </button>
+        </div>
+
+        {/* Article Content */}
+        <div className="p-4">
+          {/* Source and Date */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-cyan-400 text-sm font-medium">
+              {article.source?.name || article.source || 'News Source'}
+            </span>
+            <span className="text-gray-400 dark:text-gray-400 text-gray-600 text-xs">
+              {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : 'Unknown date'}
+            </span>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleLike}
-              disabled={loading}
-              className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
-                isLiked 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-green-100'
-              }`}
-            >
-              <FaRegThumbsUp className="text-sm" />
-              Like
-            </button>
+          {/* AI Summary Badge */}
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-cyan-400 text-xs">⚡</span>
+            <span className="text-gray-300 dark:text-gray-300 text-gray-700 text-xs">AI Summary</span>
+          </div>
 
-            <button
-              onClick={handleDislike}
-              disabled={loading}
-              className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
-                isDisliked 
-                  ? 'bg-red-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-red-100'
-              }`}
-            >
-              <FaRegThumbsDown className="text-sm" />
-              Dislike
-            </button>
+          {/* Title */}
+          <h3 className="text-white dark:text-white text-gray-900 font-bold text-lg mb-2 line-clamp-2 cursor-pointer hover:text-cyan-400 transition-colors">
+            {article.title}
+          </h3>
 
-            <button
-              onClick={handleBookmark}
-              disabled={loading}
-              className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
-                isBookmarked 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-blue-100'
-              }`}
-            >
-              {isBookmarked ? <FaBookmark className="text-sm" /> : <FaRegBookmark className="text-sm" />}
-              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-            </button>
+          {/* Description */}
+          <p className="text-gray-300 dark:text-gray-300 text-gray-700 text-sm mb-4 line-clamp-3">
+            {article.description || article.summary || 'No description available'}
+          </p>
 
-            <button
-              onClick={handleShare}
-              disabled={loading}
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-purple-100 flex items-center gap-2 transition-colors"
-            >
-              <FaRegShareSquare className="text-sm" />
-              Share
-            </button>
-
-            <button
-              onClick={handleArticleClick}
-              className="px-3 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 flex items-center gap-2 transition-colors"
-            >
-              {isRead ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
-              {isRead ? 'Read Again' : 'Read Article'}
-            </button>
+          {/* Meta and Actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-gray-400 dark:text-gray-400 text-gray-600 text-xs">
+              <span>4 min read</span>
+              <span>•</span>
+              <span>{hasVideo ? 'Video + Article' : 'Read full article'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleArticleClick}
+                className="flex items-center gap-1 px-3 py-1 text-cyan-400 hover:text-cyan-300 transition-colors text-sm"
+              >
+                <FaExternalLinkAlt className="text-xs" />
+                {hasVideo ? 'Watch & Read' : 'Read full article'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Article Summary Modal */}
+      {showSummary && (
+        <ArticleSummary
+          article={article}
+          onClose={() => setShowSummary(false)}
+          onBookmark={handleBookmark}
+          onShare={handleShare}
+        />
+      )}
+    </>
   );
 } 

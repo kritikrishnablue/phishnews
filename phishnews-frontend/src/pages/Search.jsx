@@ -1,21 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import NewsCard from '../components/NewsCard';
 import Filters from '../components/Filters';
 import { newsAPI } from '../services/api';
 import { FaSearch, FaCalendar, FaFilter, FaDatabase } from 'react-icons/fa';
 
 export default function Search() {
+  const location = useLocation();
   const [filters, setFilters] = useState({ 
     country: 'us', 
     category: '', 
-    source: 'newsapi', 
+    source: 'all', 
     q: '' 
   });
   const [searchParams, setSearchParams] = useState({
     keywords: '',
     start_date: '',
     end_date: '',
-    source: 'newsapi',
+    source: 'all',
     limit: 20
   });
   const [articles, setArticles] = useState([]);
@@ -23,8 +25,20 @@ export default function Search() {
   const [error, setError] = useState(null);
   const [searchMode, setSearchMode] = useState('filter'); // 'filter' or 'advanced'
 
+  // Handle category filter from Categories page
+  useEffect(() => {
+    if (location.state?.category) {
+      setFilters(prev => ({
+        ...prev,
+        category: location.state.category
+      }));
+      // Auto-search when coming from Categories page
+      handleFilterSearch();
+    }
+  }, [location.state]);
+
   const handleFilterSearch = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setLoading(true);
     setError(null);
     try {
@@ -60,21 +74,28 @@ export default function Search() {
     <div className="p-4 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Search News</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-white mb-2">Search News</h1>
+        <p className="text-gray-400">
           Find news articles using filters or advanced search options
         </p>
+        {location.state?.category && (
+          <div className="mt-2 p-3 bg-cyan-900 border border-cyan-700 rounded-lg">
+            <p className="text-cyan-200 text-sm">
+              Showing results for category: <span className="font-semibold capitalize">{location.state.category}</span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Search Mode Toggle */}
       <div className="mb-6">
-        <div className="flex gap-4 border-b">
+        <div className="flex gap-4 border-b border-gray-700">
           <button
             onClick={() => setSearchMode('filter')}
             className={`px-4 py-2 font-medium transition-colors ${
               searchMode === 'filter'
-                ? 'border-b-2 border-cyan-500 text-cyan-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'border-b-2 border-cyan-500 text-cyan-400'
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             <FaFilter className="inline mr-2" />
@@ -84,8 +105,8 @@ export default function Search() {
             onClick={() => setSearchMode('advanced')}
             className={`px-4 py-2 font-medium transition-colors ${
               searchMode === 'advanced'
-                ? 'border-b-2 border-cyan-500 text-cyan-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'border-b-2 border-cyan-500 text-cyan-400'
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             <FaSearch className="inline mr-2" />
@@ -99,16 +120,16 @@ export default function Search() {
         <div className="mb-6">
           <form onSubmit={handleFilterSearch} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Filter Search</h2>
+              <h2 className="text-xl font-semibold text-white">Filter Search</h2>
               <button
                 type="button"
                 onClick={clearResults}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                className="px-3 py-1 text-sm text-gray-400 hover:text-gray-300"
               >
                 Clear Results
               </button>
             </div>
-        <Filters values={filters} onChange={setFilters} />
+            <Filters values={filters} onChange={setFilters} />
             <div className="flex gap-4">
               <button 
                 type="submit" 
@@ -127,11 +148,11 @@ export default function Search() {
         <div className="mb-6">
           <form onSubmit={handleAdvancedSearch} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Advanced Search</h2>
+              <h2 className="text-xl font-semibold text-white">Advanced Search</h2>
               <button
                 type="button"
                 onClick={clearResults}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                className="px-3 py-1 text-sm text-gray-400 hover:text-gray-300"
               >
                 Clear Results
               </button>
@@ -139,22 +160,22 @@ export default function Search() {
             
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold mb-1">Keywords</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-300">Keywords</label>
                 <input
                   type="text"
                   value={searchParams.keywords}
                   onChange={(e) => setSearchParams(prev => ({ ...prev, keywords: e.target.value }))}
                   placeholder="Enter search keywords..."
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="w-full px-3 py-2 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold mb-1">Source</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-300">Source</label>
                 <select
                   value={searchParams.source}
                   onChange={(e) => setSearchParams(prev => ({ ...prev, source: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="w-full px-3 py-2 border border-gray-600 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 >
                   <option value="newsapi">NewsAPI</option>
                   <option value="gnews">GNews</option>
@@ -163,31 +184,31 @@ export default function Search() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold mb-1">Start Date</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-300">Start Date</label>
                 <input
                   type="date"
                   value={searchParams.start_date}
                   onChange={(e) => setSearchParams(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="w-full px-3 py-2 border border-gray-600 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold mb-1">End Date</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-300">End Date</label>
                 <input
                   type="date"
                   value={searchParams.end_date}
                   onChange={(e) => setSearchParams(prev => ({ ...prev, end_date: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="w-full px-3 py-2 border border-gray-600 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold mb-1">Limit</label>
+                <label className="block text-sm font-semibold mb-1 text-gray-300">Limit</label>
                 <select
                   value={searchParams.limit}
                   onChange={(e) => setSearchParams(prev => ({ ...prev, limit: parseInt(e.target.value) }))}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="w-full px-3 py-2 border border-gray-600 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 >
                   <option value={10}>10 results</option>
                   <option value={20}>20 results</option>
@@ -207,7 +228,7 @@ export default function Search() {
                 {loading ? 'Searching...' : 'Advanced Search'}
               </button>
             </div>
-      </form>
+          </form>
         </div>
       )}
 
@@ -216,40 +237,42 @@ export default function Search() {
         {loading && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Searching...</p>
+            <p className="mt-2 text-gray-400">Searching...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <p className="text-red-800">Error: {error}</p>
+          <div className="bg-red-900 border border-red-700 rounded-lg p-4 mb-4">
+            <p className="text-red-200">Error: {error}</p>
           </div>
         )}
 
         {!loading && !error && articles.length > 0 && (
           <div>
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h3 className="font-semibold text-green-800 mb-2">Search Results</h3>
-              <p className="text-green-700 text-sm">
+            <div className="mb-4 p-4 bg-green-900 border border-green-700 rounded-lg">
+              <h3 className="font-semibold text-green-200 mb-2">Search Results</h3>
+              <p className="text-green-100 text-sm">
                 Found {articles.length} articles matching your search criteria.
               </p>
             </div>
             
-      {articles.map(article => (
-        <NewsCard
-          key={article.url || article.title}
-          article={article}
-                showStatus={true}
-        />
-      ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map(article => (
+                <NewsCard
+                  key={article.url || article.title}
+                  article={article}
+                  showStatus={true}
+                />
+              ))}
+            </div>
           </div>
         )}
 
         {!loading && !error && articles.length === 0 && !loading && (
           <div className="text-center py-8">
-            <FaSearch className="text-4xl text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">No Results Found</h3>
-            <p className="text-gray-500">
+            <FaSearch className="text-4xl text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">No Results Found</h3>
+            <p className="text-gray-400">
               Try adjusting your search criteria or using different keywords.
             </p>
           </div>
@@ -258,9 +281,9 @@ export default function Search() {
 
       {/* Search Stats */}
       {!loading && !error && articles.length > 0 && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold mb-2">Search Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="mt-8 p-4 bg-gray-800 rounded-lg">
+          <h3 className="font-semibold mb-2 text-white">Search Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-300">
             <div>
               <span className="font-medium">Results:</span> {articles.length}
             </div>

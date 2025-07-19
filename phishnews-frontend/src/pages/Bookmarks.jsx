@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import NewsCard from '../components/NewsCard';
 import { userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FaBookmark, FaTrash, FaUser } from 'react-icons/fa';
+import { FaBookmark, FaTrash } from 'react-icons/fa';
 
 export default function Bookmarks() {
-  const [articles, setArticles] = useState([]);
+  const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { isAuthenticated } = useAuth();
@@ -17,11 +17,10 @@ export default function Bookmarks() {
   }, [isAuthenticated]);
 
   const loadBookmarks = async () => {
-    setLoading(true);
-    setError(null);
     try {
+      setLoading(true);
       const data = await userAPI.getBookmarks();
-      setArticles(data.bookmarks || []);
+      setBookmarks(data.bookmarks || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,22 +30,20 @@ export default function Bookmarks() {
 
   const handleUnbookmark = async (article) => {
     try {
-      await userAPI.unbookmarkArticle(article.url || article.id);
-      // Remove from local state
-      setArticles(prev => prev.filter(a => (a.url || a.id) !== (article.url || article.id)));
+      await userAPI.unbookmarkArticle(article.url);
+      setBookmarks(prev => prev.filter(b => b.url !== article.url));
     } catch (error) {
-      console.error('Failed to unbookmark article:', error);
-      alert('Failed to remove bookmark');
+      console.error('Failed to remove bookmark:', error);
     }
   };
 
   if (!isAuthenticated) {
     return (
       <div className="p-4 max-w-4xl mx-auto">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <FaUser className="text-3xl text-yellow-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-yellow-800 mb-2">Login Required</h2>
-          <p className="text-yellow-700 mb-4">
+        <div className="bg-yellow-900 border border-yellow-700 rounded-lg p-6 text-center">
+          <FaBookmark className="text-3xl text-yellow-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-yellow-200 mb-2">Login Required</h2>
+          <p className="text-yellow-100 mb-4">
             Please login to view your bookmarked articles.
           </p>
           <a 
@@ -66,16 +63,19 @@ export default function Bookmarks() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Bookmarked Articles</h1>
-            <p className="text-gray-600">
-              Your saved articles for later reading
+            <h1 className="text-3xl font-bold text-white mb-2">Bookmarks</h1>
+            <p className="text-gray-400">
+              Your saved articles and reading list
             </p>
           </div>
-          {articles.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <FaBookmark className="text-cyan-500" />
-              <span>{articles.length} bookmarks</span>
-            </div>
+          {bookmarks.length > 0 && (
+            <button
+              onClick={() => setBookmarks([])}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+            >
+              <FaTrash className="text-sm" />
+              Clear All
+            </button>
           )}
         </div>
       </div>
@@ -85,23 +85,23 @@ export default function Bookmarks() {
         {loading && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading bookmarks...</p>
+            <p className="mt-2 text-gray-400">Loading bookmarks...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <p className="text-red-800">Error: {error}</p>
+          <div className="bg-red-900 border border-red-700 rounded-lg p-4 mb-4">
+            <p className="text-red-200">Error: {error}</p>
           </div>
         )}
 
-        {!loading && !error && articles.length === 0 && (
+        {!loading && !error && bookmarks.length === 0 && (
           <div className="text-center py-8">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <FaBookmark className="text-4xl text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">No Bookmarks Yet</h3>
-              <p className="text-gray-500 mb-4">
-                You haven't bookmarked any articles yet. Start browsing news and bookmark articles you want to read later.
+            <div className="bg-gray-800 rounded-lg p-6">
+              <FaBookmark className="text-4xl text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-300 mb-2">No Bookmarks</h3>
+              <p className="text-gray-400 mb-4">
+                You haven't bookmarked any articles yet. Start reading and bookmark articles you want to save for later.
               </p>
               <a 
                 href="/" 
@@ -113,59 +113,57 @@ export default function Bookmarks() {
           </div>
         )}
 
-        {!loading && !error && articles.length > 0 && (
+        {!loading && !error && bookmarks.length > 0 && (
           <div>
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-800 mb-2">Your Bookmarks</h3>
-              <p className="text-blue-700 text-sm">
-                You have {articles.length} bookmarked article{articles.length !== 1 ? 's' : ''}.
+            <div className="mb-4 p-4 bg-blue-900 border border-blue-700 rounded-lg">
+              <h3 className="font-semibold text-blue-200 mb-2">Your Bookmarks</h3>
+              <p className="text-blue-100 text-sm">
+                You have {bookmarks.length} bookmarked articles.
               </p>
             </div>
             
-            {articles.map(article => (
-              <div key={article.url || article.title} className="relative">
-                <NewsCard
-                  article={article}
-                  showStatus={false}
-                />
-                <button
-                  onClick={() => handleUnbookmark(article)}
-                  className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                  title="Remove bookmark"
-                >
-                  <FaTrash className="text-sm" />
-                </button>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {bookmarks.map(article => (
+                <div key={article.url} className="relative">
+                  <NewsCard
+                    article={article}
+                    showStatus={true}
+                  />
+                  <button
+                    onClick={() => handleUnbookmark(article)}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10"
+                    title="Remove bookmark"
+                  >
+                    <FaTrash className="text-xs" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Stats */}
-      {!loading && !error && articles.length > 0 && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold mb-2">Bookmarks Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      {!loading && !error && bookmarks.length > 0 && (
+        <div className="mt-8 p-4 bg-gray-800 rounded-lg">
+          <h3 className="font-semibold mb-2 text-white">Bookmarks Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-300">
             <div>
-              <span className="font-medium">Total Bookmarks:</span> {articles.length}
+              <span className="font-medium">Total Bookmarks:</span> {bookmarks.length}
+            </div>
+            <div>
+              <span className="font-medium">Categories:</span> {
+                [...new Set(bookmarks.map(b => b.category || 'general'))].length
+              }
             </div>
             <div>
               <span className="font-medium">Sources:</span> {
-                [...new Set(articles.map(a => a.source?.name || 'Unknown'))].join(', ')
+                [...new Set(bookmarks.map(b => b.source?.name || 'Unknown'))].length
               }
             </div>
             <div>
-              <span className="font-medium">Oldest:</span> {
-                articles.length > 0 
-                  ? new Date(Math.min(...articles.map(a => new Date(a.publishedAt || Date.now())))).toLocaleDateString() 
-                  : 'N/A'
-              }
-            </div>
-            <div>
-              <span className="font-medium">Newest:</span> {
-                articles.length > 0 
-                  ? new Date(Math.max(...articles.map(a => new Date(a.publishedAt || Date.now())))).toLocaleDateString() 
-                  : 'N/A'
+              <span className="font-medium">Latest:</span> {
+                bookmarks.length > 0 ? new Date(bookmarks[0].publishedAt || Date.now()).toLocaleDateString() : 'None'
               }
             </div>
           </div>
